@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
+	<classpathentry kind="lib" path="jxl.jar"/>
+	<classpathentry kind="lib" path="/Users/jwan/Downloads/jenajars/arq.jar"/>
+	<classpathentry kind="lib" path="/Users/jwan/Downloads/jenajars/axis.jar"/>
+	<classpathentry kind="lib" path="/Users/jwan/Downloads/jenajars/commons-logging.jar"/>
+	<classpathentry kind="lib" path="/Users/jwan/Downloads/jenajars/icu4j_3_4.jar"/>
+	<classpathentry kind="lib" path="/Users/jwan/Downloads/jenajars/iri.jar"/>
+	<classpathentry kind="lib" path="/Users/jwan/Downloads/jenajars/jena.jar"/>
+	<classpathentry kind="lib" path="/Users/jwan/Downloads/jenajars/xercesImpl.jar"/>
+	<classpathentry kind="lib" path="/Users/jwan/Downloads/virt_jena.jar"/>
+	<classpathentry kind="lib" path="/Users/jwan/Downloads/virt_jena2.jar"/>
+	<classpathentry kind="lib" path="/Users/jwan/Downloads/virtjdbc3.jar"/>
+	<classpathentry kind="lib" path="/Users/jwan/Dropbox/workspace/vm/jena/arq.jar"/>
+	<classpathentry kind="lib" path="/Users/jwan/Dropbox/workspace/vm/jena/axis.jar"/>
+	<classpathentry kind="lib" path="/Users/jwan/Dropbox/workspace/vm/jena/commons-logging.jar"/>
+	<classpathentry kind="lib" path="/Users/jwan/Dropbox/workspace/vm/jena/icu4j_3_4.jar"/>
+	<classpathentry kind="lib" path="/Users/jwan/Dropbox/workspace/vm/jena/iri.jar"/>
+	<classpathentry kind="lib" path="/Users/jwan/Dropbox/workspace/vm/jena/jena.jar"/>
+	<classpathentry kind="lib" path="/Users/jwan/Dropbox/workspace/vm/jena/virt_jena.jar"/>
+	<classpathentry kind="lib" path="/Users/jwan/Dropbox/workspace/vm/jena/virt_jena2.jar"/>
+	<classpathentry kind="lib" path="/Users/jwan/Dropbox/workspace/vm/jena/virtjdbc3.jar"/>
+	<classpathentry kind="lib" path="/Users/jwan/Dropbox/workspace/vm/jena/xercesImpl.jar"/>
+	<classpathentry kind="lib" path="dom4j-1.6.1.jar"/>
+	<classpathentry kind="lib" path="xerces-2_11_0 2/resolver.jar"/>
+	<classpathentry kind="lib" path="xerces-2_11_0 2/serializer.jar"/>
+	<classpathentry kind="lib" path="xerces-2_11_0 2/xercesImpl.jar"/>
+	<classpathentry kind="lib" path="xerces-2_11_0 2/xercesSamples.jar"/>
+	<classpathentry kind="lib" path="xerces-2_11_0 2/xml-apis.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
