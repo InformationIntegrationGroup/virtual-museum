@@ -13,14 +13,19 @@ public interface ScalarPageManagerInterface {
 	/**
 	 * 该方法用来向scalar平台提交所有作家的照片，每个作家只提交一张照片
 	 */
-	public void addAllImage();
+	public void addAllArtistImage();
 
 	/**
 	 * 该方法用来向scalar平台上提交一个作者的照片 对于smithsonian American art
 	 * museum，由于每个图片都有对应的url，该方法是有效的
 	 * @param imageURI 作者照片的url，作者照片对应的网络上的url
 	 */
-	public void addArtistImage(String imageURI);
+	public void addImage(String imageURI);
+	
+	/**
+	 * 该方法用来向scalar平台提交所有作品的照片，每个作品只提交一张照片
+	 */
+	public  void addAllCollectionImage() ;
 
 	/**
 	 * 该方法用来向scalar平台添加所有作家的页面
@@ -29,11 +34,28 @@ public interface ScalarPageManagerInterface {
 	public void addAllArtistPage();
 
 	/**
+	 * 该方法用来向scalar平台上添加一个作品页面 对于smithsonian American art museum，artisturi的例子为
+	 *  http://collection.americanart.si.edu/id/object/1970.39 
+     * @param collectionURI 作品的uri，来自triple store
+     * @return boolean 如果添加成功，则返回true
+	 */
+	public boolean addCollectionPage(String collectionURI);
+	
+	/**
+	 * 该方法用来向scalar平台添加所有作品的页面
+	 * 由于需要在页面上添加照片的链接，所以在该方法使用之前，所有的作品照片应该已经提交到了scalar平台上 该方法从平台上实时获取照片的信息
+	 */
+	public void addAllCollectionPage();
+	
+	public void addTest() throws IOException;
+
+	/**
 	 * 该方法用来向scalar平台上添加一个作家页面 对于smithsonian American art museum，artisturi的例子为
 	 * http://collection.americanart.si.edu/id/person-institution/4253
      * @param artistURI 作家的uri，来自triple store
+     * @return boolean 如果添加成功，则返回true
 	 */
-	public void addArtistPage(String artistURI);
+	public boolean addArtistPage(String artistURI);
 
 	/**
 	 * 该方法用来删除Scalar上所有的已有页面
@@ -78,5 +100,30 @@ public interface ScalarPageManagerInterface {
 	 * @return 生成的post的内容
 	 */
 	public String generateContent(HashMap<String, String> data);
+	
+	/**
+	 * 该方法用来向scalar平台上添加一个作家姓名的tag
+     * @param personURI 作家的uri，来自triple store，去掉了所有displayname为空的项
+     * @return boolean 如果添加成功，则返回true
+	 */
+	public boolean addArtistNameTag(String personURI);
+	
+	/**
+	 * 该方法用来向scalar平台添加所有作家姓名的tag
+	 */
+	public void addAllArtistNameTag();
+	
+	/**
+	 * 该方法用来向scalar平台上建立所有作家姓名的tag标记到该作家的作品页面上
+	 */
+	public void addAllArtistNameTagToCollectionPage();
+	
+	/**
+	 * 该方法用来向scalar平台上建立一个作家姓名的tag标记到该作家的作品页面上
+     * @param tagURN 标记的URN
+     * @param pageURN 作品页面的URN
+     * @return boolean 如果添加成功，则返回true
+	 */
+	public boolean addArtistNameTagToCollectionPage(String tagURN,String pageURN);
 
 }

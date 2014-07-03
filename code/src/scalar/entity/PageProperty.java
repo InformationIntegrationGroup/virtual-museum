@@ -8,13 +8,13 @@ public interface PageProperty {
 	
 	// 健，<art:url rdf:resource="http://americanart.si.edu/images/1909/1909.7.43_1a.jpg"/>
 	// 值，<scalar:urn rdf:resource="urn:scalar:version:189826"/>
-	HashMap <String,String> ArtistImageResourceVersionMap=new HashMap<String,String>();
+	HashMap <String,String> ImageResourceVersionMap=new HashMap<String,String>();
 	
 	//scalar账号
 	String ID="wanjingbuct@gmail.com";
 	//api key密码
-	String API_KEY= "abcdef";
+	
 	//图书的基本URL
-	String BASE_URL="http://scalar.usc.edu/works/virtual-museum-of-american-art";
-
+	String BASE_URL="http://scalar.usc.edu/isi/virtual-museum-of-american-art";
+    String Book_ID="urn:scalar:book:1";
 }

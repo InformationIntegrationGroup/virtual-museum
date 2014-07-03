@@ -4,9 +4,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import scalar.entity.PageProperty;
 import scalar.entity.Person;
 import scalar.entity.Work;
+import scalar.process.PageContentGenerator;
 import virtuoso.jena.driver.VirtGraph;
 import virtuoso.jena.driver.VirtuosoQueryExecution;
 import virtuoso.jena.driver.VirtuosoQueryExecutionFactory;
@@ -24,7 +28,7 @@ import com.hp.hpl.jena.rdf.model.RDFNode;
  */
 public class VirtuosoServiceIMP  {
 	
-    private VirtGraph set = new VirtGraph("jdbc:virtuoso://fusionrepository.isi.edu:1114", "dba", "dba");
+    private VirtGraph set;
 	
 
 	/**
@@ -35,6 +39,7 @@ public class VirtuosoServiceIMP  {
 	 */
 	public  HashMap<String,String> getAllArtistName()
 	{
+		set= new VirtGraph("jdbc:virtuoso://fusionrepository.isi.edu:1114", "dba", "dba");
 		HashMap<String,String> result=new HashMap<String,String>();
 		
 		String query = "select ?person ?name  ?firstname from <http://collection.americanart.si.edu>  where { "
@@ -77,6 +82,7 @@ public class VirtuosoServiceIMP  {
 	 */
 	public  HashMap<String,String> getAllArtistName(String startString)
 	{
+		set= new VirtGraph("jdbc:virtuoso://fusionrepository.isi.edu:1114", "dba", "dba");
 		HashMap<String,String> result=new HashMap<String,String>();
 		
 		String query = "select ?person ?name  ?firstname ?appellation from <http://collection.americanart.si.edu>  where { "
@@ -88,7 +94,7 @@ public class VirtuosoServiceIMP  {
 				+" filter regex(?firstname,\"^"+startString+"\")."
 				+"}";
 		
-		System.out.println(query);
+		//System.out.println(query);
 		
 		Query sparql = QueryFactory.create(query);
 		VirtuosoQueryExecution vqe = VirtuosoQueryExecutionFactory.create(
@@ -120,17 +126,21 @@ public class VirtuosoServiceIMP  {
 	
 	/**
 	 * 该函数用来获取所有作家的uri
+	 * 由于在triple store中有些作家仅有uri，没有其他有效数据，所以这类uri不被返回
+	 * 此处今返回有名称的作家的uri
 	 * @return TreeSet <String> 包含所有作家uri的集合，采用TreeSet可以去除重复元素
 	 */
 	public  TreeSet<String> getAllArtistURI()
 	{
+		set= new VirtGraph("jdbc:virtuoso://fusionrepository.isi.edu:1114", "dba", "dba");
 		TreeSet <String> result=new TreeSet<String>();
 	
-		String query = "select ?person from <http://collection.americanart.si.edu>  where { "
+		String query = "select ?person ?appellation from <http://collection.americanart.si.edu>  where { "
 				+ "?person <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>  <http://www.cidoc-crm.org/cidoc-crm/E21_Person>."
+				+" ?person <http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by> ?appellation."	
 				+"}";
 		
-		System.out.println(query);
+		//System.out.println(query);
 		
 		Query sparql = QueryFactory.create(query);
 		VirtuosoQueryExecution vqe = VirtuosoQueryExecutionFactory.create(
@@ -150,13 +160,46 @@ public class VirtuosoServiceIMP  {
 
 	}
 	
+	/**
+	 * 该函数用来获取所有作品的uri
+	 * @return TreeSet <String> 包含所有作品uri的集合，采用TreeSet可以去除重复元素
+	 */
+	public TreeSet<String> getAllCollectionURI()
+	{
+		set= new VirtGraph("jdbc:virtuoso://fusionrepository.isi.edu:1114", "dba", "dba");
+		TreeSet <String> result=new TreeSet<String>();
 	
+		String query = "select ?collection ?title from <http://collection.americanart.si.edu>  where { "
+				+ "?collection <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>  <http://www.cidoc-crm.org/cidoc-crm/E22_Man-Made_Object>."
+				+" ?collection <http://www.cidoc-crm.org/cidoc-crm/P102_has_title> ?title."	
+				+"}";
+		
+		//System.out.println(query);
+		
+		Query sparql = QueryFactory.create(query);
+		VirtuosoQueryExecution vqe = VirtuosoQueryExecutionFactory.create(
+				sparql, set);
+		ResultSet queryResult = vqe.execSelect();
+		
+		while (queryResult.hasNext()) 
+		{
+			//System.out.println("has result");
+			QuerySolution r= queryResult.nextSolution();
+			RDFNode p = r.get("collection");
+		    result.add(p.toString().trim());
+	    }
+		
+		System.out.println(result.size());
+        return result;
+		
+	}
 	/**
 	 * 该函数用来获取所有作家的照片的uri
 	 * @return TreeSet <String> 包含所有作家照片uri的集合，采用TreeSet可以去除重复元素
 	 */
 	public  TreeSet<String> getAllArtistImageURI()
 	{
+		set= new VirtGraph("jdbc:virtuoso://fusionrepository.isi.edu:1114", "dba", "dba");
 		TreeSet <String> result=new TreeSet<String>();
 		
 		String query = "select ?person ?image from <http://collection.americanart.si.edu>  where { "
@@ -164,7 +207,7 @@ public class VirtuosoServiceIMP  {
 				+"?person <http://collection.americanart.si.edu/id/ontologies/PE_has_main_representation> ?image."
 				+"}";
 		
-		System.out.println(query);
+		//System.out.println(query);
 		
 		Query sparql = QueryFactory.create(query);
 		VirtuosoQueryExecution vqe = VirtuosoQueryExecutionFactory.create(
@@ -184,6 +227,39 @@ public class VirtuosoServiceIMP  {
 
 	}
 
+	/**
+	 * 该函数用来获取所有作品的照片的uri
+	 * @return TreeSet <String> 包含所有作品照片uri的集合，采用TreeSet可以去除重复元素
+	 */
+	public TreeSet<String> getAllCollectionImageURI()
+	{
+		set= new VirtGraph("jdbc:virtuoso://fusionrepository.isi.edu:1114", "dba", "dba");
+		TreeSet <String> result=new TreeSet<String>();
+		
+		String query = "select ?collection ?image from <http://collection.americanart.si.edu>  where { "
+				+ "?collection <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>  <http://www.cidoc-crm.org/cidoc-crm/E22_Man-Made_Object>."
+				+"?collection <http://www.cidoc-crm.org/cidoc-crm/P138i_has_representation> ?image."
+				+"}";
+		
+		//System.out.println(query);
+		
+		Query sparql = QueryFactory.create(query);
+		VirtuosoQueryExecution vqe = VirtuosoQueryExecutionFactory.create(
+				sparql, set);
+		ResultSet queryResult = vqe.execSelect();
+		
+		while (queryResult.hasNext()) 
+		{
+			//System.out.println("has result");
+			QuerySolution r= queryResult.nextSolution();
+			RDFNode p = r.get("image");
+		    result.add(p.toString().trim());
+	    }
+		
+		System.out.println(result.size());
+        return result;
+		
+	}
     
 	/**
 	 * 该方法根据给定的Person的URI到triple store中检索出相应的值，并返回
@@ -199,7 +275,7 @@ public class VirtuosoServiceIMP  {
 		
 		//System.out.println("*********id:"+person.getId());
 		
-		
+		set= new VirtGraph("jdbc:virtuoso://fusionrepository.isi.edu:1114", "dba", "dba");
 		String query = "select ?p ?s  from <http://collection.americanart.si.edu>  where { "
 			+ "<" + URI + ">" + " ?p ?s . }";
 		// System.out.println(query);
@@ -243,7 +319,10 @@ public class VirtuosoServiceIMP  {
 				person.setDeathURI(s.toString().trim());
 
 			if (p.toString().trim().indexOf("P69_is_associated_with") >= 0)
-				person.setAssociateEventURI(s.toString().trim());
+			{
+				person.addAssociateEventURI(s.toString().trim());
+				System.out.println(s.toString().trim());
+			}
 
 			if (p.toString().trim().indexOf("PE_has_note_artistbio") >= 0)
 				person.setArtistBio(s.toString().trim());
@@ -262,6 +341,7 @@ public class VirtuosoServiceIMP  {
 		person.setDisplayName(getValue(query,"name"));
 		//System.out.println("displayname:"+person.getDisplayName());
 		
+		
 
         query = "select ?place from <http://collection.americanart.si.edu> where { " + "<" + person.getDeathURI()
 		+ ">" + " <http://www.cidoc-crm.org/cidoc-crm/P7_took_place_at> ?placeuri."
@@ -269,6 +349,11 @@ public class VirtuosoServiceIMP  {
 		+ " }";
         person.setDeathPlace(getValue(query,"place"));
         //person.setDeathPlace(getDeathPlace(person.getDeathURI()));
+        
+        query = "select ?placeURI from <http://collection.americanart.si.edu> where { " + "<" + person.getDeathURI()
+        		+ ">" + " <http://www.cidoc-crm.org/cidoc-crm/P7_took_place_at> ?placeURI."
+        		+ " }";
+        person.setDeathPlaceURI(getValue(query,"placeURI"));
         
 
         query = "select ?date from <http://collection.americanart.si.edu> where { " + "<" + person.getDeathURI()
@@ -285,6 +370,11 @@ public class VirtuosoServiceIMP  {
         person.setBirthPlace(getValue(query,"place"));
         //person.setDeathPlace(getDeathPlace(person.getDeathURI()));
         
+        query = "select ?placeURI from <http://collection.americanart.si.edu> where { " + "<" + person.getBirthURI()
+        		+ ">" + " <http://www.cidoc-crm.org/cidoc-crm/P7_took_place_at> ?placeURI."
+        		+ " }";
+        person.setBirthPlaceURI(getValue(query,"placeURI"));
+        
    
         query = "select ?date from <http://collection.americanart.si.edu> where { " + "<" + person.getBirthURI()
 		+ ">" + " <http://www.cidoc-crm.org/cidoc-crm/P4_has_time-span> ?timespan."
@@ -292,12 +382,31 @@ public class VirtuosoServiceIMP  {
 		+ " }";
         person.setBirthDate(getValue(query,"date"));
         
+        if(person.getAssociateEventURISet()!=null)
+        {
+			for (String temp : person.getAssociateEventURISet()) {
+				query = "select ?place from <http://collection.americanart.si.edu> where { "
+						+ "<"
+						+ temp
+						+ ">"
+						+ " <http://www.cidoc-crm.org/cidoc-crm/P7_took_place_at> ?placerui."
+						+ "?placeuri <http://www.w3.org/2008/05/skos#prefLabel> ?place. "
+						+ " }";
+				System.out.println(query);
+				person.addAssociatePlace(getValue(query, "place"));
+			}
 
-        query = "select ?place from <http://collection.americanart.si.edu> where { " + "<" + person.getAssociateEventURI()
-		+ ">" + " <http://www.cidoc-crm.org/cidoc-crm/P7_took_place_at> ?placeuri."
-		+ "?placeuri <http://www.w3.org/2008/05/skos#prefLabel> ?place. "
-		+ " }";
-        person.setAssociatePlace(getValue(query,"place"));
+			for (String temp : person.getAssociateEventURISet()) {
+				query = "select ?placeuri from <http://collection.americanart.si.edu> where { "
+						+ "<"
+						+ temp
+						+ ">"
+						+ " <http://www.cidoc-crm.org/cidoc-crm/P7_took_place_at> ?placeuri."
+						+ " }";
+				System.out.println(query);
+				person.addAssociatePlaceURI(getValue(query, "placeuri"));
+			}
+        }
         //person.setDeathPlace(getDeathPlace(person.getDeathURI()));
         
      
@@ -306,7 +415,7 @@ public class VirtuosoServiceIMP  {
 		+ " }";
         person.setNationality(getValue(query,"place"));
         
- 
+        //暂时去掉，速度太慢
         person.setCollectionList(getCollectionList(person.getURI()));
         
         
@@ -314,26 +423,34 @@ public class VirtuosoServiceIMP  {
 	}
 	
 
-    public  ArrayList<Work> getCollectionList(String URI)
+    public  HashSet<Work> getCollectionList(String personURI)
 	{
-		ArrayList<Work> collectionList=new ArrayList<Work>();
+		HashSet<Work> collectionList=new HashSet<Work>();
+		
 
-		String query = "select ?s  from <http://collection.americanart.si.edu> where { ?s " 
-			          + " <http://www.cidoc-crm.org/cidoc-crm/P14_carried_out_by> <" + URI+"> ."
-		+ " }";
+		String query = "select ?collection  from <http://collection.americanart.si.edu> where { " 
+			          + " ?production  <http://www.cidoc-crm.org/cidoc-crm/P14_carried_out_by> <" + personURI+"> ."
+			          + " ?production <http://www.cidoc-crm.org/cidoc-crm/P108_has_produced> ?collection."
+		              + " }";
+
 
 		//System.out.println("*******************ssss " + query);
 		Query sparql = QueryFactory.create(query);
+		set= new VirtGraph("jdbc:virtuoso://fusionrepository.isi.edu:1114", "dba", "dba");
 		VirtuosoQueryExecution vqe = VirtuosoQueryExecutionFactory.create(sparql, set);
 		ResultSet results = vqe.execSelect();
 		while (results.hasNext()) {
 			QuerySolution result = results.nextSolution();
-			RDFNode s = result.get("s");
-			//System.out.println(" *******************ssss " + s);
-			//name=s.toString().trim();
+			RDFNode s = result.get("collection");
 			if(s!=null&&s.toString().trim().length()>0)
 			{
-				Work temp=getCollectionByProductionURI(s.toString().trim());
+				Work temp=new Work(s.toString().trim());
+				String title=getCollectionTitleByUri(temp.getURI());
+				temp.setTitle(title);
+			    //System.out.println(title);
+				//temp.setScalarURI(PageProperty.BASE_URL+"/"+new PageContentGenerator().convertNameToUrl(title));
+				String produceDate=getCollectionProduceDateByUri(temp.getURI());
+				temp.setProduceDate(produceDate);
 			    collectionList.add(temp);
 			}
 			
@@ -346,6 +463,7 @@ public class VirtuosoServiceIMP  {
 	public  Work getCollectionByProductionURI(String productionURI)
 	{
 		Work temp=null;
+		
 
 		String query="select ?o from <http://collection.americanart.si.edu> where { " 
 			+ " <"+productionURI+"> "+ " <http://www.cidoc-crm.org/cidoc-crm/P108_has_produced> ?o ." 
@@ -353,19 +471,20 @@ public class VirtuosoServiceIMP  {
 		
         //System.out.println("************collection " + query);
 		Query sparql = QueryFactory.create(query);
+		set= new VirtGraph("jdbc:virtuoso://fusionrepository.isi.edu:1114", "dba", "dba");
 		VirtuosoQueryExecution vqe = VirtuosoQueryExecutionFactory.create(sparql, set);
 		ResultSet results = vqe.execSelect();
 		while (results.hasNext()) {
 			QuerySolution result = results.nextSolution();
 			RDFNode o = result.get("o");
-			temp=SearchByCollectionURI(o.toString().trim());
+			temp=getCollectionByURI(o.toString().trim());
 		}
 		
 		return temp;
 	}
 	
 	
-	public  Work SearchByCollectionURI(String collectionURI) 
+	public  Work getCollectionByURI(String collectionURI) 
 	{
 	   Work temp=new Work();
 	   temp.setURI(collectionURI);
@@ -374,6 +493,7 @@ public class VirtuosoServiceIMP  {
 	   
 	   //System.out.println("*********num:"+temp.getObjnum());
 
+	   set= new VirtGraph("jdbc:virtuoso://fusionrepository.isi.edu:1114", "dba", "dba");
 	   String query = "select ?p ?s  from <http://collection.americanart.si.edu>  where { "
 			+ "<" + collectionURI + ">" + " ?p ?s . }";
 	   //System.out.println(query);
@@ -408,7 +528,7 @@ public class VirtuosoServiceIMP  {
 				temp.setKeeperURI(s.toString().trim());
 			
 			if (p.toString().trim().indexOf("PE_medium_description") >= 0)
-				temp.setDescription(s.toString().trim());
+				temp.setMedium(s.toString().trim());
 			
 			if (p.toString().trim().indexOf("PE_object_mainclass") >= 0)
 				temp.setMainClassURI(s.toString().trim());
@@ -426,6 +546,9 @@ public class VirtuosoServiceIMP  {
 			
 			if (p.toString().trim().indexOf("P43_has_dimension") >= 0)
 				temp.setDimensionURI(s.toString().trim());
+			
+			if(p.toString().trim().indexOf("PE_medium_description")>=0)
+				temp.setMedium(s.toString().trim());
 		
 		}
 		
@@ -491,29 +614,159 @@ public class VirtuosoServiceIMP  {
 		 
 
 	    //private String width;
+		 query="select ?width from <http://collection.americanart.si.edu>  where { "
+				 +" ?collection <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>  <http://www.cidoc-crm.org/cidoc-crm/E22_Man-Made_Object>"
+				 +" Filter regex(?collection, \" *"+temp.getURI()+"\")."
+				 +" ?collection <http://www.cidoc-crm.org/cidoc-crm/P43_has_dimension> ?dimension"
+				 +" Filter regex(?dimension, \" *dimension/width/cm\")."
+				 +" ?dimension <http://www.cidoc-crm.org/cidoc-crm/P90_has_value> ?width."
+				 + " }";
+		 String w=getValue(query,"width");
+		 //System.out.println(w);
+		 if(w.indexOf("http")>=0)
+			 w=w.substring(0,w.indexOf("http")-2);
+		 temp.setWidth(w);
+				
 	    //private String height;
-	    
+		 query="select ?height from <http://collection.americanart.si.edu>  where { "
+				 +" ?collection <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>  <http://www.cidoc-crm.org/cidoc-crm/E22_Man-Made_Object>"
+				 +" Filter regex(?collection, \" *"+temp.getURI()+"\")."
+				 +" ?collection <http://www.cidoc-crm.org/cidoc-crm/P43_has_dimension> ?dimension"
+				 +" Filter regex(?dimension, \" *dimension/height/cm\")."
+				 +" ?dimension <http://www.cidoc-crm.org/cidoc-crm/P90_has_value> ?height."
+				 + " }";
+		 String h=getValue(query,"height");
+		 //System.out.println(h);
+		 if(h.indexOf("http")>=0)
+			 h=h.substring(0,h.indexOf("http")-2);
+		 temp.setHeight(h);
+		
 	    //private ArrayList<Person> personList;
+		 query="select ?person from <http://collection.americanart.si.edu> where { "
+				 +" ?person <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>  <http://www.cidoc-crm.org/cidoc-crm/E21_Person>."
+				 +" ?production <http://www.cidoc-crm.org/cidoc-crm/P14_carried_out_by> ?person."
+				 +" ?production <http://www.cidoc-crm.org/cidoc-crm/P108_has_produced> ?collection."
+				 +" ?collection <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>  <http://www.cidoc-crm.org/cidoc-crm/E22_Man-Made_Object>"
+				 +" Filter regex(?collection, \" *"+temp.getURI()+"\")."
+				 + " }";
+		 sparql = QueryFactory.create(query);
+		 System.out.println(query);
+		 vqe = VirtuosoQueryExecutionFactory.create(sparql, set);
+		 results = vqe.execSelect();
+		 while (results.hasNext()) {
+			    QuerySolution result = results.nextSolution();
+				RDFNode p = result.get("person");
+				Person person=new Person(p.toString().trim());//uri
+				//System.out.println("uri:"+person.getURI());
+				String displayName=getPersonNameByUri(person.getURI());
+				person.setDisplayName(displayName);//displayname
+				//System.out.println("name:"+displayName);
+				person.setScalarURI(PageProperty.BASE_URL+"/"+new PageContentGenerator().convertNameToUrl(displayName));
+				//System.out.println("url:"+person.getScalarURI());
+				temp.addPerson(person);//此时person中只有URI+displayname
+	    }
+		
+			 
+		//System.out.println("****************title:"+temp.getTitle());
+	   
+	    //private String produceDate;
+		 query = "select ?produceDate from <http://collection.americanart.si.edu> where { " 
+				    + " ?production <http://www.cidoc-crm.org/cidoc-crm/P108_has_produced> ?collection."
+			    	+ " ?production <http://www.cidoc-crm.org/cidoc-crm/P4_has_time-span> ?timespan."
+				    + " ?timespan <http://www.w3.org/2000/01/rdf-schema#label>  ?produceDate."
+			    	+ " ?collection <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>  <http://www.cidoc-crm.org/cidoc-crm/E22_Man-Made_Object>"
+				    + " FILTER regex( ?collection, \" *"+temp.getURI()+"\"). "
+				    + " }";
+
+		temp.setProduceDate(cleanProduceDate(getValue(query,"produceDate")));
 		 
-		System.out.println("****************title:"+temp.getTitle());
-	   
-	   
 	   
 	   return temp;
 	}
 	
-
+    public String getPersonNameByUri(String uri)
+    {
+    	String name="";
+    	String query="select ?name from <http://collection.americanart.si.edu> where { "
+    			+" ?person <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>  <http://www.cidoc-crm.org/cidoc-crm/E21_Person> "
+    			+" FILTER regex( ?person, \" *"+uri+"\")."
+    			+" ?person <http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by> ?appellation."
+    			+" ?appellation <http://www.w3.org/2000/01/rdf-schema#label> ?name "
+    			+" FILTER regex( ?appellation, \" *displayname*\")."
+    			+"}";
+    	//System.out.println("query"+query);
+    	set= new VirtGraph("jdbc:virtuoso://fusionrepository.isi.edu:1114", "dba", "dba");
+    	Query sparql = QueryFactory.create(query);
+    	System.out.println("query"+query);
+		VirtuosoQueryExecution vqe = VirtuosoQueryExecutionFactory.create(sparql, set);
+		ResultSet results = vqe.execSelect();
+		while (results.hasNext()) {
+			QuerySolution result = results.nextSolution();
+			RDFNode o = result.get("name");
+			name=o.toString().trim();
+		}
+		return name;
+    }
+    
+   
+    public String  getCollectionTitleByUri(String uri)
+    {
+    	String name="";
+    	String query="select ?title from <http://collection.americanart.si.edu>  where { "
+    			+" ?collection <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>  <http://www.cidoc-crm.org/cidoc-crm/E22_Man-Made_Object> "
+    			+" FILTER regex( ?collection, \" *"+uri+"\")."
+    			+"   ?collection <http://www.cidoc-crm.org/cidoc-crm/P102_has_title> ?appellation."
+    			+" ?appellation <http://www.w3.org/2000/01/rdf-schema#label> ?title."
+    			+"}";
+    			
+    	Query sparql = QueryFactory.create(query);
+    	set= new VirtGraph("jdbc:virtuoso://fusionrepository.isi.edu:1114", "dba", "dba");
+		VirtuosoQueryExecution vqe = VirtuosoQueryExecutionFactory.create(sparql, set);
+		ResultSet results = vqe.execSelect();
+		while (results.hasNext()) {
+			QuerySolution result = results.nextSolution();
+			RDFNode o = result.get("title");
+			name=o.toString().trim();
+		}
+		return name;
+    }
+    
+    
+    public String  getCollectionProduceDateByUri(String uri)
+    {
+    	String produceDate="";
+    	String query="select ?produceDate from <http://collection.americanart.si.edu>  where { "
+    			+" ?collection <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>  <http://www.cidoc-crm.org/cidoc-crm/E22_Man-Made_Object> "
+    			+" FILTER regex( ?collection, \" *"+uri+"\")."
+    			+"  ?production <http://www.cidoc-crm.org/cidoc-crm/P108_has_produced> ?collection."
+    			+ " ?production <http://www.cidoc-crm.org/cidoc-crm/P4_has_time-span> ?timespan."
+			    + " ?timespan <http://www.w3.org/2000/01/rdf-schema#label>  ?produceDate."
+    			+"}";
+    			
+    	Query sparql = QueryFactory.create(query);
+    	set= new VirtGraph("jdbc:virtuoso://fusionrepository.isi.edu:1114", "dba", "dba");
+		VirtuosoQueryExecution vqe = VirtuosoQueryExecutionFactory.create(sparql, set);
+		ResultSet results = vqe.execSelect();
+		while (results.hasNext()) {
+			QuerySolution result = results.nextSolution();
+			RDFNode o = result.get("produceDate");
+			produceDate=o.toString().trim();
+		}
+		return produceDate;
+    }
 	
 	public  String getName(String displayNameURI)
 	{
 		String name="";
 
+		
 		String query = "select ?name where { " + "<" + displayNameURI
 		+ ">" + " <http://www.w3.org/2000/01/rdf-schema#label> ?name."
 		+ " }";
 
-		//System.out.println("22222222222222" + query);
+		//System.out.println(query);
 		Query sparql = QueryFactory.create(query);
+		set= new VirtGraph("jdbc:virtuoso://fusionrepository.isi.edu:1114", "dba", "dba");
 		VirtuosoQueryExecution vqe = VirtuosoQueryExecutionFactory.create(sparql, set);
 		ResultSet results = vqe.execSelect();
 		while (results.hasNext()) {
@@ -530,6 +783,7 @@ public class VirtuosoServiceIMP  {
 	{
 		String place="";
 
+		
 		String query = "select ?place from <http://collection.americanart.si.edu> where { " + "<" + deathURI
 		+ ">" + " <http://www.cidoc-crm.org/cidoc-crm/P7_took_place_at> ?placeuri."
 		+ "?placeuri <http://www.w3.org/2008/05/skos#prefLabel> ?place. "
@@ -537,6 +791,7 @@ public class VirtuosoServiceIMP  {
 
 		//System.out.println("************place" + query);
 		Query sparql = QueryFactory.create(query);
+		set= new VirtGraph("jdbc:virtuoso://fusionrepository.isi.edu:1114", "dba", "dba");
 		VirtuosoQueryExecution vqe = VirtuosoQueryExecutionFactory.create(sparql, set);
 		ResultSet results = vqe.execSelect();
 		while (results.hasNext()) {
@@ -551,8 +806,11 @@ public class VirtuosoServiceIMP  {
     public  String getValue(String query,String name)
 	{
 		String value="";
-        System.out.println("************place" + query);
+        //System.out.println("************place" + query);
+		
         Query sparql = QueryFactory.create(query);
+        //System.out.println(query);
+        set= new VirtGraph("jdbc:virtuoso://fusionrepository.isi.edu:1114", "dba", "dba");
 		VirtuosoQueryExecution vqe = VirtuosoQueryExecutionFactory.create(sparql, set);
 		ResultSet results = vqe.execSelect();
 		while (results.hasNext()) {
@@ -560,7 +818,7 @@ public class VirtuosoServiceIMP  {
 			RDFNode o = result.get(name);
 			value=o.toString().trim();
 		}
-		System.out.println("************place result:" + value);
+		//System.out.println("************place result:" + value);
 		return value;
 	}
 
@@ -582,6 +840,7 @@ public class VirtuosoServiceIMP  {
 		 * <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
 		 * <http://www.cidoc-crm.org/cidoc-crm/E21_Person>. "+ " }";
 		 */
+		set= new VirtGraph("jdbc:virtuoso://fusionrepository.isi.edu:1114", "dba", "dba");
 
 		String query = "select ?o ?p ?s from <http://collection.americanart.si.edu> where { ?o ?p ?s. ?o  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.cidoc-crm.org/cidoc-crm/E21_Person>."
 			+ " ?o <http://www.cidoc-crm.org/cidoc-crm/P1_is_identified_by> ?appellation. "
@@ -688,7 +947,7 @@ public class VirtuosoServiceIMP  {
 
 
 	public  String sparqlSearch(String query) {
-		
+		set= new VirtGraph("jdbc:virtuoso://fusionrepository.isi.edu:1114", "dba", "dba");
 		Query sparql = QueryFactory
 		.create("SELECT * from <http://collection.americanart.si.edu> WHERE { ?s ?p ?o } limit 100");
 
@@ -705,6 +964,19 @@ public class VirtuosoServiceIMP  {
 			System.out.println(graph + " { " + s + " " + p + " " + o + " . }");
 		}
 		return "ok";
+	}
+	
+	private String cleanProduceDate(String date)
+	{
+		String result;
+		String testreg = "[^0-9]";
+        Pattern pattern = Pattern.compile(testreg);
+        Matcher mp = pattern.matcher(date);
+        result=mp.replaceAll("").trim(); 
+        if(result.length()>=4)
+        	result.substring(0,4);
+        
+		return result;
 	}
 
 }

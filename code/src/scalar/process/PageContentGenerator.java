@@ -3,8 +3,12 @@ package scalar.process;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import scalar.entity.PageProperty;
 import scalar.entity.Person;
+import scalar.entity.Work;
 
 /**
  * 该类主要用于生成各种要提交到scalar平台的页面内容
@@ -64,8 +68,8 @@ public class PageContentGenerator {
 			System.out.println(name);
 			middle = middle
 					+ "<li style=\" border-bottom-width: 1px; border-bottom-style: dotted; border-bottom-color: rgb(0, 0, 0); padding: 8px 0px 8px 40px; position: relative; margin-bottom: 1.4em; font-size: 1em; line-height: 14px; font-family: palatino, georgia, serif; margin-top: 0px !important; margin-right: 0px !important; margin-left: 0px !important;\" ><a href=\" ";
-			middle = middle + "http://fusionrepository.isi.edu/describe/?uri="
-					+ uri;
+			middle = middle 
+					+ PageProperty.BASE_URL+"/"+convertNameToUrl(name);
 			middle = middle
 					+ "\"  style=\" color: rgb(0, 0, 0); border: 0px; font-size: 12px !important; font-family: 'Lucida Sans Unicode', 'Lucida Grande', Arial, Helvetica, sans-serif !important;\" ><span class=\" artistName\"  style=\" white-space: nowrap; font-weight: bold;\" >";
 			middle = middle + name;
@@ -102,7 +106,7 @@ public class PageContentGenerator {
 				(person.getBirthPlace()!=null&&person.getBirthPlace().length()>0))
 		{
 		     birth= "<p style=\"margin: 0px; padding: 0px 0px 12px; background-color: rgb(255, 255, 255); font-size: 12px !important; line-height: 16px ; font-family: 'Lucida Sans Unicode', 'Lucida Grande', Arial, Helvetica, sans-serif;\"><strong>Born:</strong>"
-				+ person.getBirthPlace()
+				+ convertPlaceURIToPlaceName(person.getBirthPlaceURI())
 				+ "&nbsp;"
 				+ person.getBirthDate()
 				+ "</p>";
@@ -114,7 +118,7 @@ public class PageContentGenerator {
 				(person.getDeathPlace()!=null&&person.getDeathPlace().length()>0))
 		{
 			death = "<p style=\"margin: 0px; padding: 0px 0px 12px; background-color: rgb(255, 255, 255); font-size: 12px ; line-height: 16px ; font-family: 'Lucida Sans Unicode', 'Lucida Grande', Arial, Helvetica, sans-serif ;\"><strong>Died:</strong>"
-		        + person.getDeathPlace()
+		        + convertPlaceURIToPlaceName(person.getDeathPlaceURI())
 				+ "&nbsp;"
 				+ person.getDeathDate()
 				+ "</p>";
@@ -123,13 +127,17 @@ public class PageContentGenerator {
 		// 应该有多个地点，需要修改
 		//活动地点
 		String activePlace="";
-		if(person.getAssociatePlace()!=null&&person.getAssociatePlace().length()>0)
+		if(person.getAssociatePlaceURISet()!=null&&person.getAssociatePlaceURISet().size()>0)
 		{
 			activePlace = "<p style=\"margin: 0px; padding: 0px 0px 12px; background-color: rgb(255, 255, 255); font-size: 12px ; line-height: 16px ; font-family: 'Lucida Sans Unicode', 'Lucida Grande', Arial, Helvetica, sans-serif ;\">"
 		        + "<strong>Active in:</strong></p>"
-				+ "<ul style=\"list-style: square inside; margin: -12px 0px 0px; padding: 0px 0px 12px; font-size: 12px; line-height: 16px; font-family: 'Lucida Sans Unicode', 'Lucida Grande', Arial, Helvetica, sans-serif; background-color: rgb(255, 255, 255);\">"
-				+ " <li  style=\"margin: 0px ; padding: 0px ;\">"
-				+ person.getAssociatePlace() + "</li>" + "</ul>";
+				+ "<ul style=\"list-style: square inside; margin: -12px 0px 0px; padding: 0px 0px 12px; font-size: 12px; line-height: 16px; font-family: 'Lucida Sans Unicode', 'Lucida Grande', Arial, Helvetica, sans-serif; background-color: rgb(255, 255, 255);\">";
+			for(String temp:person.getAssociatePlaceURISet())
+			{
+				activePlace=activePlace+ " <li  style=\"margin: 0px ; padding: 0px ;\">"
+				+ convertPlaceURIToPlaceName(temp) + "</li>" ;
+			}
+			activePlace=activePlace+ "</ul>";
 		}
 		
 		//作家简介
@@ -167,11 +175,165 @@ public class PageContentGenerator {
 					+ person.getWikipediaURI() + "\">Wikipedia</a></p>";
 		}
 		
+		//作品
+		String work="";
+		if(person.getCollectionList()!=null&&person.getCollectionList().size()>0)
+		{
+			work="<h3>Works</h3>";
+			for(Work temp:person.getCollectionList())
+			{
+				work=work+"<p style=\"padding: 0px; background-color: rgb(238, 238, 238); font-size: 14px ; line-height: 28px ; font-family: Georgia, 'Times New Roman', Times, serif ; margin: 0px 0px 14px ;\"><a href=\""
+					+ temp.getScalarURI()+ "\">"+temp.getTitle()+ "&nbsp;&nbsp;&nbsp;"+temp.getProduceDate()+"</a></p>";
+			}
+		}
+		
 
 		String result = picture + birth + death + activePlace + bio
-				+ linkToSmith + linkToNY + linkToWiki;
+				+ linkToSmith + linkToNY + linkToWiki+work;
 
 		return result;
+	}
+	
+	
+	/**
+	 * 生成一个作品的页面内容
+	 * @param collection 包含作品的所有信息
+	 * @param imageUrnScalarVersion 作品照片在scalar平台上对应的version
+	 * @param resource 作品照片在scalar平台上对应的resource
+	 * @return String 一个作品的页面的内容
+	 */
+	public  String generateCollectionPageContent(Work collection,String imageUrnScalarVersion, String resource) {
+		//生成图片链接
+		String picture = "";
+		if (collection.getRepresentationURI()!= null&& collection.getRepresentationURI().length() > 0) 
+		{
+			picture = "<a class=\"inline\" href=\""
+					+ collection.getRepresentationURI() + "\" resource=\""
+					+ resource + "\" rel=\"" + imageUrnScalarVersion
+					+ "\"></a>";
+		}
+      
+		//年代
+		String produceDate="";
+		if((collection.getProduceDate()!=null&&collection.getProduceDate().length()>0))
+		{
+		     produceDate= "<p style=\"margin: 0px; padding: 0px 0px 12px; background-color: rgb(255, 255, 255); font-size: 12px !important; line-height: 16px ; font-family: 'Lucida Sans Unicode', 'Lucida Grande', Arial, Helvetica, sans-serif;\">"
+				+ collection.getProduceDate()
+				+ "</p>";
+		}
+		
+		
+		//作者
+		String artist="";
+		if((collection.getPersonList()!=null&&collection.getPersonList().size()>0))
+		{
+			 artist = "<p style=\"margin: 0px; padding: 0px 0px 12px; background-color: rgb(255, 255, 255); font-size: 12px ; line-height: 16px ; font-family: 'Lucida Sans Unicode', 'Lucida Grande', Arial, Helvetica, sans-serif ;\">";
+				     
+			 for(Person temp:collection.getPersonList())
+			 {
+				 artist=artist+"<a href=\""
+						 +temp.getScalarURI()+"\">"
+						 +temp.getDisplayName()+"&nbsp;"+"</a>";
+			 }
+			 artist=artist+ "&nbsp;"+ "</p>";
+		}
+		
+		//大小
+		String dimension="";
+		if((collection.getWidth()!=null&&collection.getWidth().length()>0)||
+				(collection.getHeight()!=null&&collection.getHeight().length()>0))
+		{
+			dimension = "<p style=\"margin: 0px; padding: 0px 0px 12px; background-color: rgb(255, 255, 255); font-size: 12px ; line-height: 16px ; font-family: 'Lucida Sans Unicode', 'Lucida Grande', Arial, Helvetica, sans-serif ;\">"
+		        + collection.getWidth()
+				+ "cm *&nbsp;"
+				+ collection.getHeight()
+				+"cm"
+				+ "</p>";
+		}
+		  
+		//材质
+		String medium="";
+		if((collection.getMedium()!=null&&collection.getMedium().length()>0))
+		{
+			 medium = "<p style=\"margin: 0px; padding: 0px 0px 12px; background-color: rgb(255, 255, 255); font-size: 12px ; line-height: 16px ; font-family: 'Lucida Sans Unicode', 'Lucida Grande', Arial, Helvetica, sans-serif ;\">"
+				        + collection.getMedium()
+						+ "&nbsp;"
+						+ "</p>";
+		}
+		
+		//博物馆
+		String museum="";
+		if((collection.getKeeper()!=null&&collection.getKeeper().length()>0))
+		{
+			 museum = "<p style=\"padding: 0px; background-color: rgb(238, 238, 238); font-size: 14px ; line-height: 28px ; font-family: Georgia, 'Times New Roman', Times, serif ; margin: 0px 0px 14px ;\">";
+			 if(collection.getKeeper().indexOf("smithsonian")>=0)
+				 museum=museum+"<a href=\"http://americanart.si.edu/collections/search/artwork/?id="
+				+ collection.getId()
+				+ "\">";
+			 museum=museum+	collection.getKeeper()
+				+"</a></p>";
+		}
+		
+		/*//描述
+		String description="";
+		if((collection.getMdium()!=null&&collection.getDescription().length()>0))
+		{
+			 description = "<p style=\"margin: 0px; padding: 0px 0px 12px; background-color: rgb(255, 255, 255); font-size: 12px ; line-height: 16px ; font-family: 'Lucida Sans Unicode', 'Lucida Grande', Arial, Helvetica, sans-serif ;\"><strong></strong>"
+						 + collection.getDescription()
+						 + "&nbsp;"
+						 + "</p>";
+		}*/
+		
+		
+		//关键词
+		String keywords="";
+		if(collection.getKeywordList()!=null&&collection.getKeywordList().size()>0)
+		{
+			keywords="<p style=\"margin: 0px; padding: 0px 0px 12px; background-color: rgb(255, 255, 255); font-size: 12px ; line-height: 16px ; font-family: 'Lucida Sans Unicode', 'Lucida Grande', Arial, Helvetica, sans-serif ;\">"
+					 + collection.getKeywordList().toString()
+					 + "&nbsp;"
+					 + "</p>";
+		}
+		
+		//类别
+		
+
+		
+        String result = picture+produceDate+artist+dimension+medium+museum+keywords;
+
+		return result;
+	}
+	
+	//将作家名字转换成scalar平台上的url链接格式
+	public String convertNameToUrl(String name)
+	{
+	   String url;
+	   //url=name.replace(". ","-").replace(" ","-").replace(".","-").toLowerCase();
+	   url=name.replace(" ","-").toLowerCase();
+	   url=url.replace("--","-").toLowerCase();
+	   
+	   //url中删除除了空格-,/,字母，数字之外的其他符号
+	   String regex = "[^A-Za-z0-9/-]";
+       Pattern pattern = Pattern.compile(regex);
+       Matcher mp = pattern.matcher(url);
+       url=mp.replaceAll("").trim(); 
+	   
+	   
+	   return url;
+	 }
+	
+	//将地址uri转换成地址名称，包括所有的名称
+	//collection.americanart.si.edu/id/thesauri/place/Madison_none_Georgia_United-States
+	//返回Madison，Georgia——United－States
+	public String convertPlaceURIToPlaceName(String placeURI)
+	{
+		String placeName=null;
+		if(placeURI.indexOf("/place")>=0)
+		{
+			placeName=placeURI.substring(placeURI.indexOf("/place")+7,placeURI.length());
+		    placeName=placeName.replace("none","").replace("___",",").replace("__", ",").replace("_",",").replace("-", " ");	
+		}
+		return placeName;
 	}
 
 }

@@ -1,6 +1,6 @@
 package scalar.entity;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 
 
 
@@ -23,14 +23,19 @@ public class Person  {
 	private String deathURI;
 	private String birthPlace;
 	private String deathPlace;
+	private String deathPlaceURI;
+	private String birthPlaceURI;
 	private String birthDate;
 	private String deathDate;
 	
 	private String nationalityURI;
 	private String nationality;
 	
-	private String associateEventURI;
-	private String associatePlace;
+	
+	private HashSet<String> associateEventURISet;
+    private HashSet<String> associatePlaceSet;
+	private HashSet<String> associatePlaceURISet;
+	
 	private String artistBio;
 	private String primaryArtistBio;
 	
@@ -39,14 +44,20 @@ public class Person  {
 	private String fbaseURI;
 	private String wikipediaURI;
 
-	private ArrayList<Work> collectionList;
+	private HashSet<Work> collectionList;
+	private String scalarURI;
 	
     /** default constructor */
     public Person() {
     }
+    
+    public Person(String personURI)
+    {
+    	this.URI=personURI;
+    }
 
 
-    public Person(String uri, String id, String displayName, String displayNameURI, String mainRepresentationURI, String birthURI, String deathURI, String birthPlace, String deathPlace, String birthDate, String deathDate, String nationalityURI, String nationality, String associateEventURI, String associatePlace,String artistBio, String primaryArtistBio, String dbpediaURI, String nytimesURI, String fbaseURI, String wikipediaURI,ArrayList<Work> collectionList) {
+    public Person(String uri, String id, String displayName, String displayNameURI, String mainRepresentationURI, String birthURI, String deathURI, String birthPlace, String deathPlace, String birthDate, String deathDate, String nationalityURI, String nationality, HashSet<String> associateEventURISet, HashSet<String> associatePlaceURI,HashSet<String> associatePlaceSet,String artistBio, String primaryArtistBio, String dbpediaURI, String nytimesURI, String fbaseURI, String wikipediaURI,HashSet<Work> collectionList) {
 		super();
 		this.URI = uri;
 		this.id=id;
@@ -61,8 +72,8 @@ public class Person  {
 		this.deathDate = deathDate;
 		this.nationalityURI = nationalityURI;
 		this.nationality = nationality;
-		this.associateEventURI = associateEventURI;
-		this.associatePlace=associatePlace;
+		this.associateEventURISet = associateEventURISet;
+		this.associatePlaceSet=associatePlaceSet;
 		this.artistBio = artistBio;
 		this.primaryArtistBio = primaryArtistBio;
 		this.dbpediaURI = dbpediaURI;
@@ -70,7 +81,7 @@ public class Person  {
 		this.wikipediaURI=wikipediaURI;
 		this.fbaseURI = fbaseURI;
 		
-		this.collectionList=new ArrayList<Work>();
+		this.collectionList=new HashSet<Work>();
     	for(Work temp:collectionList)
     		this.collectionList.add(temp);
 	}
@@ -87,15 +98,7 @@ public class Person  {
 	}
 
 
-	public String getAssociateEventURI() {
-		return associateEventURI;
-	}
-
-
-	public void setAssociateEventURI(String associateEventURI) {
-		this.associateEventURI = associateEventURI;
-	}
-
+	
 
 	public String getBirthDate() {
 		return birthDate;
@@ -127,13 +130,13 @@ public class Person  {
 	}
 
 
-	public ArrayList<Work> getCollectionList() {
+	public HashSet<Work> getCollectionList() {
 		return collectionList;
 	}
 
 
-	public void setCollectionList(ArrayList<Work> collectionList) {
-		this.collectionList=new ArrayList<Work>();
+	public void setCollectionList(HashSet<Work> collectionList) {
+		this.collectionList=new HashSet<Work>();
 		for(Work temp:collectionList)
 			this.collectionList.add(temp);
 		}
@@ -269,15 +272,6 @@ public class Person  {
 	}
 
 
-	public String getAssociatePlace() {
-		return associatePlace;
-	}
-
-
-	public void setAssociatePlace(String associatePlace) {
-		this.associatePlace = associatePlace;
-	}
-
 
 	public String getId() {
 		return id;
@@ -298,7 +292,74 @@ public class Person  {
 		this.wikipediaURI = wikipediaURI;
 	}
 
+	public String getScalarURI() {
+		return scalarURI;
+	}
 
+	public void setScalarURI(String scalarURI) {
+		this.scalarURI = scalarURI;
+	}
+
+	public String getDeathPlaceURI() {
+		return deathPlaceURI;
+	}
+
+	public void setDeathPlaceURI(String deathPlaceURI) {
+		this.deathPlaceURI = deathPlaceURI;
+	}
+
+	public String getBirthPlaceURI() {
+		return birthPlaceURI;
+	}
+
+	public void setBirthPlaceURI(String birthPlaceURI) {
+		this.birthPlaceURI = birthPlaceURI;
+	}
+
+	public HashSet<String> getAssociateEventURISet() {
+		return associateEventURISet;
+	}
 	
+	public void addAssociateEventURI(String associateEventURI)
+	{
+		if(associateEventURISet==null)
+			associateEventURISet=new HashSet<String>();
+		associateEventURISet.add(associateEventURI);
+	}
 
+	public void setAssociateEventURISet(HashSet<String> associateEventURISet) {
+		this.associateEventURISet = associateEventURISet;
+	}
+
+	public HashSet<String> getAssociatePlaceSet() {
+		return associatePlaceSet;
+	}
+	
+	public void addAssociatePlace(String associatePlace)
+	{
+		if(associatePlaceSet==null)
+			associatePlaceSet=new HashSet<String>();
+		associatePlaceSet.add(associatePlace);
+	}
+
+	public void setAssociatePlaceSet(HashSet<String> associatePlaceSet) {
+		this.associatePlaceSet = associatePlaceSet;
+	}
+
+	public HashSet<String> getAssociatePlaceURISet() {
+		return associatePlaceURISet;
+	}
+	
+	public void addAssociatePlaceURI(String associatePlaceURI)
+	{
+		if(associatePlaceURISet==null)
+			associatePlaceURISet=new HashSet<String>();
+		associatePlaceURISet.add(associatePlaceURI);
+	}
+
+
+	public void setAssociatePlaceURISet(HashSet<String> associatePlaceURISet) {
+		this.associatePlaceURISet = associatePlaceURISet;
+	}
+	
 }
