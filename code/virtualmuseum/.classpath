@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
+	<classpathentry kind="lib" path="jenajars/arq.jar"/>
+	<classpathentry kind="lib" path="jenajars/axis.jar"/>
+	<classpathentry kind="lib" path="jenajars/commons-logging.jar"/>
+	<classpathentry kind="lib" path="jenajars/icu4j_3_4.jar"/>
+	<classpathentry kind="lib" path="jenajars/iri.jar"/>
+	<classpathentry kind="lib" path="jenajars/jena.jar"/>
+	<classpathentry kind="lib" path="jenajars/xercesImpl.jar"/>
+	<classpathentry kind="lib" path="junit-4.10.jar"/>
+	<classpathentry kind="lib" path="jenajars/virt_jena.jar"/>
+	<classpathentry kind="lib" path="jenajars/virt_jena2.jar"/>
+	<classpathentry kind="lib" path="jenajars/virtjdbc3.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
