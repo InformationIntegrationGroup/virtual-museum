@@ -102,19 +102,19 @@ public class PageContentGenerator {
 
 		//出生地点和日期
 		String birth="";
-		if((person.getBirthDate()!=null&&person.getBirthDate().length()>0)||
+		if((person.getBirthDate()!=null&&person.getBirthDate().length()>=4)||
 				(person.getBirthPlace()!=null&&person.getBirthPlace().length()>0))
 		{
 		     birth= "<p style=\"margin: 0px; padding: 0px 0px 12px; background-color: rgb(255, 255, 255); font-size: 12px !important; line-height: 16px ; font-family: 'Lucida Sans Unicode', 'Lucida Grande', Arial, Helvetica, sans-serif;\"><strong>Born:</strong>"
 				+ convertPlaceURIToPlaceName(person.getBirthPlaceURI())
 				+ "&nbsp;"
-				+ person.getBirthDate()
+				+ person.getBirthDate().substring(0,4)
 				+ "</p>";
 		}
 		
 		//死亡地点和日期
 		String death="";
-		if((person.getDeathDate()!=null&&person.getDeathDate().length()>0)||
+		if((person.getDeathDate()!=null&&person.getDeathDate().length()>=4)||
 				(person.getDeathPlace()!=null&&person.getDeathPlace().length()>0))
 		{
 			death = "<p style=\"margin: 0px; padding: 0px 0px 12px; background-color: rgb(255, 255, 255); font-size: 12px ; line-height: 16px ; font-family: 'Lucida Sans Unicode', 'Lucida Grande', Arial, Helvetica, sans-serif ;\"><strong>Died:</strong>"
@@ -183,7 +183,14 @@ public class PageContentGenerator {
 			for(Work temp:person.getCollectionList())
 			{
 				work=work+"<p style=\"padding: 0px; background-color: rgb(238, 238, 238); font-size: 14px ; line-height: 28px ; font-family: Georgia, 'Times New Roman', Times, serif ; margin: 0px 0px 14px ;\"><a href=\""
-					+ temp.getScalarURI()+ "\">"+temp.getTitle()+ "&nbsp;&nbsp;&nbsp;"+temp.getProduceDate()+"</a></p>";
+					+ temp.getScalarURI()+ "\">"+temp.getTitle()+ "&nbsp;&nbsp;&nbsp;"+temp.getProduceDate()+"&nbsp;&nbsp;&nbsp;";
+				if(temp.getKeeperURI()!=null&&temp.getKeeperURI().indexOf(PageProperty.Smith_Graph)>=0)
+					work=work+PageProperty.Smith_Name;
+				if(temp.getKeeperURI()!=null&&temp.getKeeperURI().indexOf(PageProperty.Crystal_Graph)>=0)
+					work=work+PageProperty.Crystal_Name;
+				if(temp.getKeeperURI()!=null&&temp.getKeeperURI().indexOf(PageProperty.Carter_Graph)>=0)
+					work=work+PageProperty.Carter_Name;
+				work=work+"</a></p>";
 			}
 		}
 		
@@ -203,6 +210,8 @@ public class PageContentGenerator {
 	 * @return String 一个作品的页面的内容
 	 */
 	public  String generateCollectionPageContent(Work collection,String imageUrnScalarVersion, String resource) {
+		if(collection==null)
+			return "";
 		//生成图片链接
 		String picture = "";
 		if (collection.getRepresentationURI()!= null&& collection.getRepresentationURI().length() > 0) 
@@ -309,7 +318,8 @@ public class PageContentGenerator {
 	{
 	   String url;
 	   //url=name.replace(". ","-").replace(" ","-").replace(".","-").toLowerCase();
-	   url=name.replace(" ","-").toLowerCase();
+	   url=name.replace(":","-").toLowerCase();
+	   url=url.replace(" ","-");
 	   url=url.replace("--","-").toLowerCase();
 	   
 	   //url中删除除了空格-,/,字母，数字之外的其他符号
@@ -331,7 +341,7 @@ public class PageContentGenerator {
 		if(placeURI.indexOf("/place")>=0)
 		{
 			placeName=placeURI.substring(placeURI.indexOf("/place")+7,placeURI.length());
-		    placeName=placeName.replace("none","").replace("___",",").replace("__", ",").replace("_",",").replace("-", " ");	
+		    placeName=placeName.replace("none","").replace("___",", ").replace("__", ", ").replace("_",", ").replace("-", " ");	
 		}
 		return placeName;
 	}

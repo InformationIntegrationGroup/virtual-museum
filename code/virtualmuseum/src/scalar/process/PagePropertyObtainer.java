@@ -265,21 +265,22 @@ public class PagePropertyObtainer {
 		// 针对每一行内容，进行解析
 		while (null != ((str = input.readLine()))) 
 		{
-			System.out.println("正在处理:" + str);
+			//System.out.println("正在处理:" + str);
 			//获取url
-			int urlBeginIndex = str.indexOf("http://americanart.si.edu/images");
+			int urlBeginIndex = str.indexOf("http://");
+			int imageIndex=str.indexOf("images");
 			int urlEndIndex = 0;
-			if (urlBeginIndex >= 0) {
+			if (urlBeginIndex >= 0&&imageIndex>=0) {
 				urlEndIndex = str.indexOf("\"/>");
 				imageUrl = str.substring(urlBeginIndex, urlEndIndex);
-				System.out.println("imageurl:"+imageUrl);
+				//System.out.println("imageurl:"+imageUrl);
 			}
 
 			//获取version
 			int versionBeginPosition = str.indexOf("urn:scalar:version");
 			int versionEndPosition = str.indexOf("\"/>");
 			if (versionBeginPosition >= 0) {
-				System.out.println("version:"+str.substring(versionBeginPosition, versionEndPosition));
+				//System.out.println("version:"+str.substring(versionBeginPosition, versionEndPosition));
 				PageProperty.ImageResourceVersionMap.put(imageUrl,
 						str.substring(versionBeginPosition, versionEndPosition));
 			}
@@ -321,7 +322,7 @@ public class PagePropertyObtainer {
 				// 获取version
 				int versionBeginPosition = str.indexOf("urn:scalar:version");
 				int versionEndPosition = str.indexOf("\"/>");
-				if (versionBeginPosition >= 0) {
+				if (versionBeginPosition >= 0 &&versionEndPosition>=0) {
 					System.out.println("version:"
 							+ str.substring(versionBeginPosition,
 									versionEndPosition));

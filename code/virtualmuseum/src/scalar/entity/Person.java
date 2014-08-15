@@ -1,6 +1,7 @@
 package scalar.entity;
 
 import java.util.HashSet;
+import java.util.TreeSet;
 
 
 
@@ -44,7 +45,7 @@ public class Person  {
 	private String fbaseURI;
 	private String wikipediaURI;
 
-	private HashSet<Work> collectionList;
+	private TreeSet<Work> collectionList;
 	private String scalarURI;
 	
     /** default constructor */
@@ -57,7 +58,7 @@ public class Person  {
     }
 
 
-    public Person(String uri, String id, String displayName, String displayNameURI, String mainRepresentationURI, String birthURI, String deathURI, String birthPlace, String deathPlace, String birthDate, String deathDate, String nationalityURI, String nationality, HashSet<String> associateEventURISet, HashSet<String> associatePlaceURI,HashSet<String> associatePlaceSet,String artistBio, String primaryArtistBio, String dbpediaURI, String nytimesURI, String fbaseURI, String wikipediaURI,HashSet<Work> collectionList) {
+    public Person(String uri, String id, String displayName, String displayNameURI, String mainRepresentationURI, String birthURI, String deathURI, String birthPlace, String deathPlace, String birthDate, String deathDate, String nationalityURI, String nationality, HashSet<String> associateEventURISet, HashSet<String> associatePlaceURI,HashSet<String> associatePlaceSet,String artistBio, String primaryArtistBio, String dbpediaURI, String nytimesURI, String fbaseURI, String wikipediaURI,TreeSet<Work> collectionList) {
 		super();
 		this.URI = uri;
 		this.id=id;
@@ -81,7 +82,7 @@ public class Person  {
 		this.wikipediaURI=wikipediaURI;
 		this.fbaseURI = fbaseURI;
 		
-		this.collectionList=new HashSet<Work>();
+		this.collectionList=new TreeSet<Work>();
     	for(Work temp:collectionList)
     		this.collectionList.add(temp);
 	}
@@ -130,13 +131,13 @@ public class Person  {
 	}
 
 
-	public HashSet<Work> getCollectionList() {
+	public TreeSet<Work> getCollectionList() {
 		return collectionList;
 	}
 
 
-	public void setCollectionList(HashSet<Work> collectionList) {
-		this.collectionList=new HashSet<Work>();
+	public void setCollectionList(TreeSet<Work> collectionList) {
+		this.collectionList=new TreeSet<Work>();
 		for(Work temp:collectionList)
 			this.collectionList.add(temp);
 		}

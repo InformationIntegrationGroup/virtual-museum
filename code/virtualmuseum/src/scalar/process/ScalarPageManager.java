@@ -36,28 +36,56 @@ public class ScalarPageManager {
 	 */
 	public void addArtistRelatedPage(String personURI)
 	{
-		//添加作者照片
-	    addArtistImage(personURI);
+		propertyObtainer.getImageResourceVersion();//从scalar平台获取Image的resource和version，以便在页面添加链接或判断图片是否已经提交
+	    
+		//添加作家照片
+		if(hasArtistImage(personURI))
+			System.out.println("scalar上作者照片已经存在"+personURI);
+		else
+			addArtistImage(personURI);
+			
+		
 		//添加作者页面
-		addArtistPage(personURI);
+		if(!hasArtistPage(personURI))
+			addArtistPage(personURI);
+		else
+			System.out.println("作家页面已经存在"+personURI);
+		
 		
 		//添加作品图片和作品页面
-		HashSet<Work> collectionSet=virtuosoService.getCollectionList(personURI);
-		System.out.println(collectionSet.size());
+		TreeSet<Work> collectionSet=virtuosoService.getCollectionList(personURI);
 		for(Work temp:collectionSet)
 		{
 			String collectionURI=temp.getURI();
-		    addCollectionImage(collectionURI);
-		    addCollectionPage(collectionURI);
+			if(!hasCollectionImage(collectionURI))
+				addCollectionImage(collectionURI);
+			else
+				System.out.println("作品图片已经存在"+collectionURI);
+		    
+			if(!hasCollectionPage(collectionURI))
+                addCollectionPage(collectionURI);
+			else
+				System.out.println("作品页面已经存在"+collectionURI);
 		}
 		
 		//添加作者标记
-		addArtistNameTag(personURI);
-		//作者标记添加到作品
-		addArtistNameTagToCollectionPage(personURI);
+		if(!hasArtistNameTag(personURI))
+		    addArtistNameTag(personURI);
+		else
+			System.out.println("作家姓名tag已经存在"+personURI);
 		
-	    //添加subject general标记到作品
+		//作者标记添加到作品
+		addArtistNameTagToCollectionPage(personURI);				
+			    
+		//添加subject general标记到作品
 		addSubjectGeneralTagToCollectionPage(personURI);
+		
+	    //测试用,添加与此作者相关的uri
+		//addAllPlaceTag(personURI);
+		//添加出生地点标记到作者页面
+	    //添加死亡地点到作者页面
+		//添加活跃地点到作者页面
+		//addPlaceTagToArtistPage(personURI);				
 	 }
 	
 	/**
@@ -70,7 +98,72 @@ public class ScalarPageManager {
 		int sum=0;
 	
 		for (String temp : generalSubjecSet) {
-		   addTag("tag-"+temp);
+			if(!hasSubjectGeneralTag(temp))
+		      {
+				addTag("tag: "+temp);
+				System.out.println("添加general tag:"+temp);
+		      }
+			else
+			  System.out.println("general tag已经存在:"+temp);
+		   sum++;
+		}
+		
+	}
+	
+	/**
+	 * 向scalar平台上添加地点的标记
+	 */
+	public void addAllPlaceTag()
+	{
+        HashSet<String> placeSet = virtuosoService.getAllPlaceURI();
+		
+		int sum=0;
+	
+		for (String temp : placeSet) {
+		   String placeName=generator.convertPlaceURIToPlaceName(temp);
+		   addTag("tag: "+placeName);
+		   sum++;
+		}
+		
+		System.out.println("共添加general subject tag"+sum);
+	}
+	
+	/**
+	 * 向scalar平台上添加和指定的作者集合关联地点的标记
+	 */
+	public void addAllPlaceTag(HashSet<String> personURISet)
+	{
+        HashSet<String> placeSet=new HashSet<String>();
+        for(String personURI:personURISet)
+        {
+        	HashSet<String> tempSet=virtuosoService.getAllPlaceURI(personURI);
+        	for(String temp:tempSet)
+        		placeSet.add(temp);
+        }
+		
+		int sum=0;
+	
+		for (String temp : placeSet) {
+		   String placeName=generator.convertPlaceURIToPlaceName(temp);
+		   addTag("tag: "+placeName);
+		   sum++;
+		}
+		
+		System.out.println("共添加general subject tag"+sum);
+	}
+	
+	/**
+	 * 向scalar平台上添加某人相关地点的标记
+	 */
+	public void addAllPlaceTag(String personURI)
+	{
+        HashSet<String> placeSet = virtuosoService.getAllPlaceURI(personURI);
+		
+		int sum=0;
+	
+		for (String temp : placeSet) {
+		   String placeName=generator.convertPlaceURIToPlaceName(temp);
+		   addTag("tag: "+placeName);
 		   sum++;
 		}
 		
@@ -90,7 +183,7 @@ public class ScalarPageManager {
 			result = virtuosoService.getAllArtistName(firstCharacter); // 得到所有artist的名字和uri
 			sum=sum+result.size();
 			content = generator.generateArtistListPageContent(result, firstCharacter); // 生成html页面的内容
-            System.out.println("content:"+content);
+            //System.out.println("content:"+content);
 			// 设置带传递的参数
 			data = new HashMap<String, String>();
 			data.put("id", PageProperty.ID);
@@ -112,6 +205,63 @@ public class ScalarPageManager {
 				e.printStackTrace();
 			}
 		}
+		System.out.println("一共有作家"+sum);
+	}
+	
+	/**
+	 * 该方法用来向scalar平台中添加有链接的作家姓名索引页面，一共26个，从A－Z
+	 */
+	public  void addLinkedArtistListPage() {
+		HashMap<String, String> result;
+		String content;
+		HashMap<String, String> data;
+		HashMap<String, String> tempResult;
+		int sum=0;
+		int k=0;
+		int j=0;
+
+		for (int i = 0; i <= 25; i++) 
+		{
+			
+			String firstCharacter = new Character((char) (65 + i)).toString();
+			if(hasArtistListPage(firstCharacter))
+			{
+				System.out.println("作家列表页面已经存在:"+firstCharacter);
+				continue;
+			}
+			
+			result= virtuosoService.getAllLinkedArtistName(firstCharacter); // 得到所有artist的名字和uri
+			/*Set<String> set=result.keySet();
+			for(String temp:set)
+				System.out.println(temp+result.get(temp));
+				*/
+			sum=sum+result.size();
+			
+			content = generator.generateArtistListPageContent(result, firstCharacter); // 生成html页面的内容
+            //System.out.println("content:"+content);
+			// 设置带传递的参数
+			data = new HashMap<String, String>();
+			data.put("id", PageProperty.ID);
+			data.put("action", "ADD");
+			data.put("dcterms:title", "List of Artists | " + firstCharacter);
+			data.put("sioc:content", content);
+			data.put("rdf:type","http://scalar.usc.edu/2012/01/scalar-ns#Composite");
+			data.put("api_key", PageProperty.API_KEY);
+			data.put("scalar:child_urn", PageProperty.Book_ID);
+			data.put("scalar:child_type","http://scalar.usc.edu/2012/01/scalar-ns#Book");
+			data.put("scalar:child_rel", "page");
+			data.put("scalar:metadata:is_live", "1");
+			String url = PageProperty.BASE_URL+"/api/add";
+			try {
+				// 向scalar平台提交数据
+				getResponse(post(url, generateContent(data)));
+				
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			System.out.println("添加作家列表页面:"+firstCharacter);
+		}
+		
 		System.out.println("一共有作家"+sum);
 	}
 
@@ -137,7 +287,10 @@ public class ScalarPageManager {
 	{
 		String imageURI=virtuosoService.getImageURIByCollectionURI(collectionURI);
 		if(imageURI!=null&&imageURI.length()>0)
-		   addImage(imageURI);
+		  {
+			addImage(imageURI);
+			System.out.println("添加作品图片"+imageURI);
+		  }
 	}
 	
 	/**
@@ -147,7 +300,141 @@ public class ScalarPageManager {
 	{
 		String imageURI=virtuosoService.getImageURIByPersonURI(personURI);
 		if(imageURI!=null&&imageURI.length()>0)
+		{
 		    addImage(imageURI);
+		    System.out.println("添加作家照片"+imageURI);
+		}
+	}
+	
+	/**
+	 * 该方法用来判断一个作者的照片是否已经上传到scalar上
+	 * @param personURI
+	 * @return
+	 */
+	public boolean hasArtistImage(String personURI)
+	{
+		boolean result=false;
+		String imageURI=virtuosoService.getImageURIByPersonURI(personURI);
+
+        if(imageURI!=null&&imageURI.length()>0)
+        {
+		    if(PageProperty.ImageResourceVersionMap.get(imageURI)!=null)
+		       result=true;
+		}
+        else
+        	System.out.println("作者没有照片");
+        
+		return result;
+	}
+	
+	/**
+	 * 该方法用来判断一个作品的照片是否已经上传到scalar上
+	 * @param personURI
+	 * @return
+	 */
+	public boolean hasCollectionImage(String collectionURI)
+	{
+		boolean result=false;
+		String imageURI=virtuosoService.getImageURIByCollectionURI(collectionURI);
+		//System.out.println(imageURI);
+
+        if(imageURI!=null&&imageURI.length()>0)
+        {
+		    if(PageProperty.ImageResourceVersionMap.get(imageURI)!=null)
+		       result=true;
+		}
+        else
+        	System.out.println("作品没有照片");
+        
+		return result;
+	}
+	
+	/**
+	 * 该方法用来判断一个作者的页面是否已经上传到scalar上
+	 * @param personURI
+	 * @return
+	 */
+	public boolean hasArtistPage(String personURI)
+	{
+		boolean result=false;
+		String pageName=generator.convertNameToUrl(virtuosoService.getPersonNameByUri(personURI));
+		//System.out.println(pageName);
+		
+		if(propertyObtainer.getItemStateByName(pageName))
+			result=true;
+        
+		return result;
+	}
+	
+	
+	/**
+	 * 该方法用来判断一个作品的页面是否已经上传到scalar上
+	 * @param personURI
+	 * @return
+	 */
+	public boolean hasCollectionPage(String collectionURI)
+	{
+		boolean result=false;
+		String pageName=generator.convertNameToUrl(virtuosoService.getCollectionTitleByUri(collectionURI));
+		//System.out.println(pageName);
+		
+		if(propertyObtainer.getItemStateByName(pageName))
+			result=true;
+        
+		return result;
+	}
+	
+	/**
+	 * 该方法用来判断一个作者tag是否已经上传到scalar上
+	 * @param personURI
+	 * @return
+	 */
+	public boolean hasArtistNameTag(String personURI)
+	{
+		boolean result=false;
+		String pageName=generator.convertNameToUrl("tag: "+virtuosoService.getPersonNameByUri(personURI));
+		//System.out.println(pageName);
+		
+		if(propertyObtainer.getItemStateByName(pageName))
+			result=true;
+        
+		return result;
+	}
+	
+	
+	/**
+	 * 该方法用来判断一个subject general tag是否已经上传到scalar上
+	 * @param personURI
+	 * @return
+	 */
+	public boolean hasSubjectGeneralTag(String tagName)
+	{
+		boolean result=false;
+		String pageName=generator.convertNameToUrl("tag: "+tagName);
+		//System.out.println(pageName);
+		
+		if(propertyObtainer.getItemStateByName(pageName))
+			result=true;
+        
+		return result;
+	}
+	
+	
+	/**
+	 * 该方法用来判断一个作家列表页面是否已经上传到scalar上
+	 * @param personURI
+	 * @return
+	 */
+	public boolean hasArtistListPage(String firstCharacter)
+	{
+		boolean result=false;
+		String pageName=generator.convertNameToUrl("List of Artists | " + firstCharacter);
+		//System.out.println(pageName);
+		
+		if(propertyObtainer.getItemStateByName(pageName))
+			result=true;
+        
+		return result;
 	}
 
 	/**
@@ -173,7 +460,7 @@ public class ScalarPageManager {
 		String url = PageProperty.BASE_URL+"/api/add";
 		try {
 			// 向scalar平台提交数据
-			System.out.println("添加图片"+imageURI);
+			//System.out.println("添加图片"+imageURI);
 			getResponse(post(url, generateContent(data)));
           } catch (IOException e) {
 			e.printStackTrace();
@@ -229,7 +516,7 @@ public class ScalarPageManager {
 				break;
 			i++;
 		}
-		System.out.println("作家uri共"+artistURIList.size());
+		//System.out.println("作家uri共"+artistURIList.size());
 		System.out.println("共添加作家页面"+sum);
 		
 
@@ -256,13 +543,17 @@ public class ScalarPageManager {
 		
 		//由于嵌入图片时需要知道图片url，resource和version
 		//图片的version，从scalar平台获取，保存在ArtistImageResourceVersionMap中
-		String imageUrnScalarVersion= (String) PageProperty.ImageResourceVersionMap.get(person.getMainRepresentationURI());
 		//图片的url 保存在person中
-		String imageURI = person.getMainRepresentationURI();
-		//图片的resource，resource是图片名字，替换所有符号“.”得到
+		String imageURI ="";
+		imageURI= person.getMainRepresentationURI();
+		String imageUrnScalarVersion="";
 		String resource = "";
-		if (imageURI != null && imageURI.length() > 0)
-			resource = imageURI.substring(imageURI.lastIndexOf("/") + 1,imageURI.length()).replace(".", "").toLowerCase();
+        if(imageURI!=null&&imageURI.length()>0)
+        {
+		   imageUrnScalarVersion= (String) PageProperty.ImageResourceVersionMap.get(imageURI);
+		   //图片的resource，resource是图片名字，替换所有符号“.”得到
+		   resource = imageURI.substring(imageURI.lastIndexOf("/") + 1,imageURI.length()).replace(".", "").toLowerCase();
+        }
 		
 		// 作家页面的内容
 		String content = generator.generateArtistPageContent(person, imageUrnScalarVersion,resource); 
@@ -271,7 +562,7 @@ public class ScalarPageManager {
 			if(imageUrnScalarVersion!=null&&imageUrnScalarVersion.length()>0&&imageUrnScalarVersion.indexOf("191634")>0)
 			     System.out.println(person.getURI()+"  "+person.getMainRepresentationURI()+" "+imageUrnScalarVersion+"  "+resource+"\n");
         */
-		System.out.println(person.getBirthPlaceURI());
+		//System.out.println(person.getBirthPlaceURI());
 		// 设置带传递的参数
 		HashMap<String, String> data;//要提交的参数
 		data = new HashMap<String, String>();
@@ -318,17 +609,21 @@ public class ScalarPageManager {
 	{
 		boolean addResult=false;
         // 得到collection的各种信息
-		Work collection = virtuosoService.getCollectionByURI(collectionURI); 
+		Work collection=null;
+		collection= virtuosoService.getCollectionByURI(collectionURI); 
+		
 		
 		//由于嵌入图片时需要知道图片url，resource和version
 		//图片的version，从scalar平台获取，保存在ImageResourceVersionMap中
-		String imageUrnScalarVersion= (String) PageProperty.ImageResourceVersionMap.get(collection.getRepresentationURI());
-		//图片的url 保存在collection中
-		String imageURI = collection.getRepresentationURI();
-		//图片的resource，resource是图片名字，替换所有符号“.”得到
+		String imageURI=collection.getRepresentationURI();//图片的url 保存在collection中
+		String imageUrnScalarVersion="";
 		String resource = "";
-		if (imageURI != null && imageURI.length() > 0)
-			resource = imageURI.substring(imageURI.lastIndexOf("/") + 1,imageURI.length()).replace(".", "").toLowerCase();
+		if(collectionURI!=null&&imageURI!=null&&imageURI.length()>0)
+	    {
+			imageUrnScalarVersion= (String) PageProperty.ImageResourceVersionMap.get(imageURI);
+	        //图片的resource，resource是图片名字，替换所有符号“.”得到
+		    resource = imageURI.substring(imageURI.lastIndexOf("/") + 1,imageURI.length()).replace(".", "").toLowerCase();
+		  }
 		
 		// 作品页面的内容
 		String content = generator.generateCollectionPageContent(collection, imageUrnScalarVersion,resource); 
@@ -338,37 +633,35 @@ public class ScalarPageManager {
 			     System.out.println(person.getURI()+"  "+person.getMainRepresentationURI()+" "+imageUrnScalarVersion+"  "+resource+"\n");
         */
 		
-		// 设置带传递的参数
-		HashMap<String, String> data;//要提交的参数
-		data = new HashMap<String, String>();
-		data.put("id", PageProperty.ID);
-		data.put("action", "ADD");
-		data.put("dcterms:title", collection.getTitle());
-		data.put("sioc:content", content);
-		data.put("rdf:type","http://scalar.usc.edu/2012/01/scalar-ns#Composite");
-		data.put("api_key", PageProperty.API_KEY);
-		data.put("scalar:child_urn", PageProperty.Book_ID);
-		data.put("scalar:child_type","http://scalar.usc.edu/2012/01/scalar-ns#Book");
-		data.put("scalar:child_rel", "page");
-		data.put("scalar:metadata:is_live", "1");
-		String url = PageProperty.BASE_URL+"/api/add";
+		if(collection!=null&&collection.getTitle()!=null&&collection.getTitle().length()>0)
+		{
+		   // 设置带传递的参数
+		   HashMap<String, String> data;//要提交的参数
+		   data = new HashMap<String, String>();
+		   data.put("id", PageProperty.ID);
+		   data.put("action", "ADD");
+		   data.put("dcterms:title", collection.getTitle());
+		   data.put("sioc:content", content);
+		   data.put("rdf:type","http://scalar.usc.edu/2012/01/scalar-ns#Composite");
+		   data.put("api_key", PageProperty.API_KEY);
+		   data.put("scalar:child_urn", PageProperty.Book_ID);
+		   data.put("scalar:child_type","http://scalar.usc.edu/2012/01/scalar-ns#Book");
+		   data.put("scalar:child_rel", "page");
+		   data.put("scalar:metadata:is_live", "1");
+		   String url = PageProperty.BASE_URL+"/api/add";
 		
 	
-		// 向scalar平台提交数据
-		try {
-			if(collection.getTitle()!=null&&collection.getTitle().length()>0)
-			{
+		   // 向scalar平台提交数据
+		   try {
 			    System.out.println("添加作品页面:"+collection.getTitle());
 		        getResponse(post(url, generateContent(data)));
 		        addResult=true;
-			}
-			else
-			{
-				//errorList.add(person);
-			}
-           } catch (IOException e) {
+			   }
+           catch (IOException e) {
 			e.printStackTrace();
 			}
+		}
+		
 		return addResult;
 	}
 	
@@ -398,7 +691,7 @@ public class ScalarPageManager {
 			if (i>=10)
 				break;
 		}
-		System.out.println("作品uri共"+collectionURIList.size());
+		//System.out.println("作品uri共"+collectionURIList.size());
 		System.out.println("共添加作品页面"+sum);
 		
 
@@ -421,10 +714,10 @@ public class ScalarPageManager {
 		boolean addResult=false;
         // 得到artist的各种信息
 		String personName= virtuosoService.getPersonNameByUri(personURI); 
-        System.out.println("添加tag:"+personName);
+        System.out.println("添加tag: "+personName);
 		if(personName!=null&&personName.length()>0)
 		{
-		     addTag("tag-"+personName);
+		     addTag("tag: "+personName);
 		     addResult=true;
 		}
 		return addResult;
@@ -457,7 +750,7 @@ public class ScalarPageManager {
 		// 向scalar平台提交数据
 		try 
 		{
-			    System.out.println("添加tag:"+tagName);
+			    //System.out.println("添加tag: "+tagName);
 			    getResponse(post(url, generateContent(data)));
 		
            } catch (IOException e) {
@@ -484,7 +777,7 @@ public class ScalarPageManager {
 				break;
 			i++;
 		}
-		System.out.println("作家uri共"+artistURIList.size());
+		//System.out.println("作家uri共"+artistURIList.size());
 		System.out.println("共添加tag"+sum);
 	}
 	
@@ -516,7 +809,7 @@ public class ScalarPageManager {
    {
 		// 根据artistname转换成page url，提交到scarlar，获取tagurn
 		String tagURN = getTagURNByArtistURI(personURI);
-		System.out.println("tagURN:"+tagURN);
+		//System.out.println("tagURN:"+tagURN);
 
 		// 根据artistURI检索得到该作家的所有作品名称，转换成page url，然后提交到scalar，获取version
 		HashSet<String> collectionPageURNSet = getCollectionPageURNByArtistURI(personURI);
@@ -525,7 +818,29 @@ public class ScalarPageManager {
 		{
 			for (String collectionPageURN : collectionPageURNSet) {
 				addTagToPage(tagURN, collectionPageURN);
-				System.out.println(tagURN + " " + collectionPageURN);
+				//System.out.println(tagURN + " " + collectionPageURN);
+			}
+		}
+	}
+	
+	/**
+	 * 根据personURI添加place tag到作家页面的联系
+	 * @param personURI
+	 */
+	public void addPlaceTagToArtistPage(String personURI)
+   {
+		
+		HashSet<String> tagURNSet = getPlaceTagURNByArtistURI(personURI);
+		//System.out.println("tagURNSet:"+tagURNSet);
+
+		String pageURN = getArtistPageURNByArtistURI(personURI);
+        //System.out.println("pageURN:"+pageURN);
+		if(pageURN!=null&&pageURN.length()>0)
+		{
+			for (String tagURN : tagURNSet) {
+				System.out.println("准备添加tagURN:"+tagURN + " pageURN:" + pageURN);
+				addTagToPage(tagURN, pageURN);
+				
 			}
 		}
 	}
@@ -538,13 +853,13 @@ public class ScalarPageManager {
 	public void addSubjectGeneralTagToCollectionPage(String personURI)
    {
 		
-		HashSet<Work> collectionURISet = virtuosoService.getCollectionList(personURI);
+		TreeSet<Work> collectionURISet = virtuosoService.getCollectionList(personURI);
 		
 		for(Work collection:collectionURISet)
 		{
 			String tagURN=getGeneralSubjectTagURNByCollectionURI(collection.getURI());
 			String collectionPageURN=getCollectionPageURNByCollectionURI(collection.getURI());
-			System.out.println("tagURN:"+tagURN + " collectionPageURN:" + collectionPageURN);
+			//System.out.println("tagURN:"+tagURN + " collectionPageURN:" + collectionPageURN);
 			if(tagURN!=null&&tagURN.length()>0&&collectionPageURN!=null&&collectionPageURN.length()>0)
 			    addTagToPage(tagURN,collectionPageURN);
 			
@@ -775,7 +1090,7 @@ public class ScalarPageManager {
 		
 		String artistName=virtuosoService.getPersonNameByUri(artistURI);
 
-		String url = PageProperty.BASE_URL+"/"+generator.convertNameToUrl("tag-"+artistName);
+		String url = PageProperty.BASE_URL+"/"+generator.convertNameToUrl("tag: "+artistName);
         tagURN=propertyObtainer.postAndParseURN(url);
 		return tagURN;
 	}
@@ -789,12 +1104,12 @@ public class ScalarPageManager {
 	{
 		
 	    HashSet<String> pageURNSet=new HashSet<String>();
-		HashSet<Work> collectionSet=virtuosoService.getCollectionList(artistURI);
+	    TreeSet<Work> collectionSet=virtuosoService.getCollectionList(artistURI);
 		for(Work temp:collectionSet)
 		{
 			pageURNSet.add(propertyObtainer.postAndParseURN(temp.getScalarURI()));
 		}
-		System.out.println(pageURNSet.toString());
+		//System.out.println(pageURNSet.toString());
 		return pageURNSet;
 	}
 	
@@ -813,9 +1128,38 @@ public class ScalarPageManager {
 		
 		String generalSubject=virtuosoService.getGeneralSubjectByCollectionURI(collectionURI);
 
-		String url = PageProperty.BASE_URL+"/"+generator.convertNameToUrl("tag-"+generalSubject);
+		String url = PageProperty.BASE_URL+"/"+generator.convertNameToUrl("tag: "+generalSubject);
         tagURN=propertyObtainer.postAndParseURN(url);
 		return tagURN;
+		
+	}
+	
+	
+	/**
+	 * 根据作家的uri，得到作家相关地点的place tag在scalar平台上的urn
+	 * 
+	 * @param personURI 作家的uri
+	 * @return 地点tag在scalar平台上的页面的scalar version urn
+	 */
+	public HashSet<String> getPlaceTagURNByArtistURI(String personURI)
+	{
+		HashSet<String> tagURNSet=new HashSet<String>();
+		HashMap<String, String> data = new HashMap<String, String>();
+		data.put("rec", "0");
+		data.put("ref", "0");
+		
+		HashSet<String> placeSet=virtuosoService.getAllPlaceURI(personURI);
+		//System.out.println("placeSet:"+placeSet);
+        for(String place:placeSet)
+        {
+           
+           //System.out.println("placeName:"+place);
+		   String url = PageProperty.BASE_URL+"/"+generator.convertNameToUrl("tag:"+generator.convertPlaceURIToPlaceName(place));
+		   //System.out.println("placeurl:"+url);
+		   //System.out.println("urn:"+propertyObtainer.postAndParseURN(url));
+           tagURNSet.add(propertyObtainer.postAndParseURN(url));
+        }
+		return tagURNSet;
 		
 	}
 	
@@ -831,9 +1175,30 @@ public class ScalarPageManager {
 		data.put("rec", "0");
 		data.put("ref", "0");
 		String collectionTitle=virtuosoService.getCollectionTitleByUri(collectionURI);
-		System.out.println("colletionURI:"+collectionURI);
-		System.out.println("collectionTitle:"+collectionTitle);
+		//System.out.println("colletionURI:"+collectionURI);
+		//System.out.println("collectionTitle:"+collectionTitle);
         String url = PageProperty.BASE_URL+"/"+generator.convertNameToUrl(collectionTitle);
+        pageURN=propertyObtainer.postAndParseURN(url);
+		return pageURN;
+		
+	}
+	
+	
+	/**根据artist的URI，得到作家页面的urn
+	 * 
+	 * @param personURI 作家的uri
+	 * @return 作家在scalar平台上的页面的scalar version urn
+	 */
+	public String getArtistPageURNByArtistURI(String personURI)
+	{
+		String pageURN="";
+		HashMap<String, String> data = new HashMap<String, String>();
+		data.put("rec", "0");
+		data.put("ref", "0");
+		String personName=virtuosoService.getPersonNameByUri(personURI);
+		//System.out.println("personURI:"+personURI);
+		//System.out.println("personName:"+personName);
+        String url = PageProperty.BASE_URL+"/"+generator.convertNameToUrl(personName);
         pageURN=propertyObtainer.postAndParseURN(url);
 		return pageURN;
 		
